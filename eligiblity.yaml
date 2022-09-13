@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: Yonder Eligibility Checker
+  description: Suite of APIs for third party providers (such as aggregators or comparison sites) to check if prospective leads are eligible for Yonder products and facilitates the application process.
+  version: 1.0.0
+servers:
+  - url: https://api.yondercard.dev/leads
+    description: UAT
+  - url: https://api.yondercard.com/leads
+    description: Production
+paths:
+  /v1/check-eligibility:
+    post:
+      operationId: checkEligibility
+      tags:
+        - eligibility
+      summary: Check eligibility for a prospect
+      description: Determine using a combination of the provided data, and under certain circumstances data from a soft credit search if the lead / prospect is eligible for the Yonder Credit Card.
+      requestBody:
+        description: Information required to perform an eligibility check
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EligibilityCheckRequest'
+      responses:
+        200:
+          description: Eligibility check successfully performed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EligibilityCheckResponse'
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+        401:
+          description: Unauthorized
+      security:
+        - basicAuth: [ ]
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    EligibilityCheckRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: jane.smith@example.com
+        emailVerified:
+          type: boolean
+          description: Flag to indicate if the provided email address has been verified
+        firstName:
+          type: string
+          example: Jane
+        middleNames:
+          type: string
+          example: Rose
+        lastName:
+          type: string
+          example: Smith
+        dateOfBirth:
+          type: string
+          format: date
+          example: 1982-03-10
+        grossAnnualIncome:
+          type: number
+          minimum: 0
+          example: 45000
+        monthlyRentContributions:
+          type: number
+          minimum: 0
+        monthsInCountry:
+          type: integer
+          minimum: 0
+          description: Number of months the prospect has been living in the country
+        employmentStatus:
+          $ref: '#/components/schemas/EmploymentStatus'
+        residentialStatus:
+          $ref: '#/components/schemas/ResidentialStatus'
+        currentAddress:
+          $ref: '#/components/schemas/Address'
+        previousAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+      required:
+        - email
+        - emailVerified
+        - firstName
+        - lastName
+        - dateOfBirth
+        - grossAnnualIncome
+        - monthlyRentContributions
+        - monthsInCountry
+        - employmentStatus
+        - residentialStatus
+        - currentAddress
+    EmploymentStatus:
+      type: string
+      enum:
+        - FULL_TIME_EMPLOYED
+        - PART_TIME_EMPLOYED
+        - SELF_EMPLOYED
+        - STUDENT
+        - UNEMPLOYED
+    ResidentialStatus:
+      type: string
+      enum:
+        - HOMEOWNER
+        - RENTING
+        - LIVING_WITH_PARENTS
+        - OTHER
+    Address:
+      type: object
+      properties:
+        subBuilding:
+          type: string
+          example: Yonder
+        buildingName:
+          type: string
+          example: The Space
+        buildingNumber:
+          type: string
+          example: 69
+        street:
+          type: string
+          example: Old Street
+        city:
+          type: string
+          example: London
+        postalCode:
+          type: string
+          example: EC1V 9HX
+        country:
+          type: string
+          example: GB
+        moveInDate:
+          type: string
+          format: yyyy-MM
+          example: 2022-06
+      required:
+        - buildingNumber
+        - street
+        - city
+        - postalCode
+        - country
+        - moveInDate
+    EligibilityCheckResponse:
+      type: object
+      properties:
+        approvalChance:
+          type: number
+          minimum: 0
+          maximum: 1
+        apr:
+          type: number
+          minimum: 0
+        creditLine:
+          type: number
+          minimum: 0
+          maximum: 10000
+      required:
+        - approvalChance
+    BadRequestError:
+      type: object
+      properties:
+        field:
+          type: string
+        error:
+          type: string
+      required:
+        - error
+
